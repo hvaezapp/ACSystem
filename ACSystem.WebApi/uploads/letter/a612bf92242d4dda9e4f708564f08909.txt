@@ -1,0 +1,1 @@
+	/usr/local/bin/php /home/solwdxyg/public_html/checker.php
