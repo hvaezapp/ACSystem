@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using ACSystem.Infrastructure.Utilities;
+using System.ComponentModel.DataAnnotations;
 
 namespace ACSystem.Domain.Common
 {
@@ -15,7 +16,7 @@ namespace ACSystem.Domain.Common
         {
             IsDeleted = false;
             CreateDateMl = DateTime.Now;
-            CreateDateSh = "1402/02/02"; // test
+            CreateDateSh = DateAndTimeShamsi.DateTimeShamsi();
         }
 
 

@@ -25,6 +25,9 @@ namespace ACSystem.Application.DTOs.LetterReference
 
         public string ReplyText { get; set; }
 
+        public DateTime CreateDateMl { get; set; }
+
+        public string CreateDateSh { get; set; }
 
         public GetLetterReferenceInfoDto()
         {

@@ -70,12 +70,22 @@ namespace ACSystem.Application.Features.LetterReference.Handlers.Queries
                 int skip = (page - 1) * take;
 
 
-                var letterReferences = await _letterReferenceRepository.GetAllAsyncWithPaging(a=>a.ToEmployeeId == request.LetterReferenceFilterDto.EmployeeId ,
+
+
+                if (_cache.TryGetValue(ImportedLetterReferenceList, out IEnumerable<Domain.Entity.LetterReference> letterReferences))
+                {
+
+                }
+                else
+                {
+
+                    letterReferences = await _letterReferenceRepository.GetAllAsyncWithPaging(a => a.ToEmployeeId == request.LetterReferenceFilterDto.EmployeeId,
                                                                             skip, take,
                                                                             "Letter,FromEmployee,ToEmployee,attaches",
                                                                             cancellationToken);
 
-                //var res = _mapper.Map<List<GetLetterReferenceInfoDto>>(letterReferences);
+                    _cache.Set(ImportedLetterReferenceList, letterReferences, TimeSpan.FromSeconds(DefaultConst.CashTimeOut));
+                }
 
 
                 var data = letterReferences.Select( a => new GetLetterReferenceInfoDto
@@ -85,6 +95,8 @@ namespace ACSystem.Application.Features.LetterReference.Handlers.Queries
                     ToEmployee = _mapper.Map<GetEmployeeDto>(a.ToEmployee),
                     letter = _mapper.Map<GetLetterDto>(a.Letter),
                     ReplyText = a.ReplyText,
+                    CreateDateMl = a.CreateDateMl,
+                    CreateDateSh = a.CreateDateSh,
                     LetterNotes = _mapper.Map <List<GetLetterNoteDto>>( _letterNoteRepository.GetAll(a=>a.LetterId == a.LetterId , cancellationToken)),
 
                 }).ToList();

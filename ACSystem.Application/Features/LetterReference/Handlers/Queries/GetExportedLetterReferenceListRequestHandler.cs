@@ -2,6 +2,7 @@
 using ACSystem.Application.DTOs.Employee;
 using ACSystem.Application.DTOs.Letter;
 using ACSystem.Application.DTOs.LetterAttach;
+using ACSystem.Application.DTOs.LetterNote;
 using ACSystem.Application.DTOs.LetterReference;
 using ACSystem.Application.DTOs.LetterReference.Validator;
 using ACSystem.Application.Features.LetterReference.Requests.Queries;
@@ -24,15 +25,17 @@ namespace ACSystem.Application.Features.LetterReference.Handlers.Queries
 
         private readonly ILetterReferenceRepository _letterReferenceRepository;
         private readonly ILetterAttachRepository _letterAttachRepository;
+        private readonly ILetterNoteRepository _letterNoteRepository;
         private readonly IMapper _mapper;
         private readonly IMemoryCache _cache;
 
         public GetExportedLetterReferenceListRequestHandler(ILetterReferenceRepository letterReferenceRepository,
-                                                         IMapper mapper, IMemoryCache cache,
+                                                         IMapper mapper, IMemoryCache cache, ILetterNoteRepository letterNoteRepository,
                                                          ILetterAttachRepository letterAttachRepository)
         {
             _letterReferenceRepository = letterReferenceRepository;
             _letterAttachRepository = letterAttachRepository;
+            _letterNoteRepository = letterNoteRepository;
             _mapper = mapper;
             _cache = cache;
         }
@@ -65,10 +68,22 @@ namespace ACSystem.Application.Features.LetterReference.Handlers.Queries
                 int skip = (page - 1) * take;
 
 
-                var letterReferences = await _letterReferenceRepository.GetAllAsyncWithPaging(a=>a.FromEmployeeId == request.LetterReferenceFilterDto.EmployeeId , 
-                                                                                            skip, take,
-                                                                                            "Letter,FromEmployee,ToEmployee,attaches"
-                                                                                            , cancellationToken);
+                if (_cache.TryGetValue(ExportedLetterReferenceList, out IEnumerable<Domain.Entity.LetterReference> letterReferences))
+                {
+
+                }
+                else
+                {
+
+                    letterReferences = await _letterReferenceRepository.GetAllAsyncWithPaging(a => a.FromEmployeeId == request.LetterReferenceFilterDto.EmployeeId,
+                                                                                               skip, take,
+                                                                                               "Letter,FromEmployee,ToEmployee,attaches"
+                                                                                               , cancellationToken);
+
+                    _cache.Set(ExportedLetterReferenceList, letterReferences, TimeSpan.FromSeconds(DefaultConst.CashTimeOut));
+                }
+
+
 
                 //var res = _mapper.Map<List<GetLetterReferenceInfoDto>>(letterReferences);
 
@@ -80,7 +95,10 @@ namespace ACSystem.Application.Features.LetterReference.Handlers.Queries
                     FromEmployee = _mapper.Map<GetEmployeeDto>(a.FromEmployee),
                     ToEmployee = _mapper.Map<GetEmployeeDto>(a.ToEmployee),
                     letter = _mapper.Map<GetLetterDto>(a.Letter),
-                    ReplyText = a.ReplyText
+                    ReplyText = a.ReplyText,
+                    CreateDateMl = a.CreateDateMl,
+                    CreateDateSh = a.CreateDateSh,
+                    LetterNotes = _mapper.Map<List<GetLetterNoteDto>>(_letterNoteRepository.GetAll(a => a.LetterId == a.LetterId, cancellationToken)),
 
 
                 }).ToList();
